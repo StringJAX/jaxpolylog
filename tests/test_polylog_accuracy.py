@@ -192,6 +192,17 @@ class TestClosedFormCases:
         got = complex(jax_polylog(z, s, P_RANGE_INF, "inf"))
         assert_close(got, ref, rtol=RTOL_TIGHT, label=f"closed-form s={s} z={z_val}")
 
+    @pytest.mark.parametrize("modulus", [1e-3, 1e-6, 1e-9, 1e-12, 1e-15])
+    @pytest.mark.parametrize("phase", [0.1, 1.3, 2.9, 4.4])
+    def test_li1_small_modulus(self, modulus, phase):
+        """Li_1(z) = -log(1-z) at small |z| keeps full relative precision (log1p, not log(1-z)).
+        Worldsheet-instanton sums evaluate Li_1 at |z| down to e^{-2 pi q.t}, with large GV
+        prefactors, so a relative error eps/|z| there is amplified (fixed 2026-10-08)."""
+        z_val = modulus * cmath.exp(1j * phase)
+        ref = mpmath_ref(z_val, 1)
+        got = complex(jax_polylog(jnp.array(z_val), 1, P_RANGE_INF, "inf"))
+        assert_close(got, ref, rtol=1e-14, label=f"Li_1 |z|={modulus} phase={phase}")
+
 
 # ===========================================================================
 # 2.  "inf" series  (Li_s(z) = Σ z^k/k^s)

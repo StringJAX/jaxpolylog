@@ -9,7 +9,7 @@ setup(
     long_description_content_type='text/markdown',
     author='Andreas Schachner',
     author_email='as3475@cornell.edu',
-    url='https://github.com/AndreasSchachner/jaxpolylog',
+    url='https://github.com/StringJAX/jaxpolylog',
     packages=['jaxpolylog'],
     python_requires='>=3.12',
     install_requires=[

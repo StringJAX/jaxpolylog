@@ -39,7 +39,7 @@ Why is this package important?
 
 Polylogarithms appear in nearly every advanced calculation in
 theoretical physics and number theory: Feynman-integral coefficients,
-modular forms, period integrals on Calabi--Yau manifolds, instanton
+modular forms, period integrals on Calabi-Yau manifolds, instanton
 sums in string theory, finite-temperature equations of state, and the
 multi-polylog basis of multi-loop QFT.  None of the standard JAX or
 NumPy/SciPy stacks ship a usable polylogarithm:

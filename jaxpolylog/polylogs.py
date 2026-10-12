@@ -169,8 +169,10 @@ def _Li1_over_z_stable(z):
     """
     EPS = 0.5
     use_series = jnp.abs(z) < EPS
-    SAFE_CLOSED = jnp.asarray(0.7 + 0.0j, dtype=z.dtype)
-    SAFE_SERIES = jnp.asarray(0.3 + 0.0j, dtype=z.dtype)
+    # Real literals: they cast to complex or real z alike. Complex literals with dtype=z.dtype raised a
+    # TypeError for real z in current JAX (fixed 2026-10-09; the same in the two patch branches below).
+    SAFE_CLOSED = jnp.asarray(0.7, dtype=z.dtype)
+    SAFE_SERIES = jnp.asarray(0.3, dtype=z.dtype)
     z_series = jnp.where(use_series, z, SAFE_SERIES)
     z_closed = jnp.where(use_series, SAFE_CLOSED, z)
 
@@ -249,7 +251,7 @@ def intgrand(z: complex, t: complex, s: int) -> complex:
 def jax_polylog(z: complex, s: int, p_range: int, approx: str, pval: float = _PVAL_OPTIMAL) -> complex: # type: ignore
     r"""
     **Description:**
-    This function computes the polylogarithm of order `s` at point `z` using JAX. It supports automatic differentiation and is optimized for performance. The function is defined for integer values of `s` and can handle both real and complex inputs for `z`. 
+    This function computes the polylogarithm of order `s` at point `z` using JAX. It supports automatic differentiation and is optimised for performance. The function is defined for integer values of `s` and can handle both real and complex inputs for `z`.
     
     **Mathematical Definition:**
     The polylogarithm function is defined as:
@@ -311,7 +313,9 @@ def jax_polylog(z: complex, s: int, p_range: int, approx: str, pval: float = _PV
     
     # Handle special cases for specific integer values of s
     if s==1:
-        return -jnp.log(1-z) # type: ignore
+        # log1p, not log(1-z): forming 1-z loses the low digits of a small z, so -log(1-z) has a
+        # relative error of about eps/|z| (1e-6 at |z| = 1e-10). jnp.log1p is accurate for complex z.
+        return -jnp.log1p(-z) # type: ignore
     elif s==0:
         return z/(1-z)
     elif s==-1:
@@ -379,8 +383,8 @@ def jax_polylog(z: complex, s: int, p_range: int, approx: str, pval: float = _PV
             t  = jnp.abs(mu) / (2.0 * jnp.pi)
             use_inf = (jnp.abs(z) < 1.0) & (t >= pval)
 
-            SAFE_INF  = jnp.asarray(0.5 + 0.0j, dtype=z.dtype)
-            SAFE_ZERO = jnp.asarray(0.9 + 0.0j, dtype=z.dtype)
+            SAFE_INF  = jnp.asarray(0.5, dtype=z.dtype)     # real literals: real or complex z (2026-10-09)
+            SAFE_ZERO = jnp.asarray(0.9, dtype=z.dtype)
             z_for_inf  = jnp.where(use_inf, z, SAFE_INF)
             z_for_zero = jnp.where(use_inf, SAFE_ZERO, z)
 
@@ -490,8 +494,8 @@ def _Li_over_z(z: complex, s: int, p_range: int, approx: str, pval: float) -> co
             t  = jnp.abs(mu) / (2.0 * jnp.pi)
             use_inf = (jnp.abs(z) < 1.0) & (t >= pval)
 
-            SAFE_INF  = jnp.asarray(0.5 + 0.0j, dtype=z.dtype)
-            SAFE_ZERO = jnp.asarray(0.9 + 0.0j, dtype=z.dtype)
+            SAFE_INF  = jnp.asarray(0.5, dtype=z.dtype)     # real literals: real or complex z (2026-10-09)
+            SAFE_ZERO = jnp.asarray(0.9, dtype=z.dtype)
             z_for_inf  = jnp.where(use_inf, z, SAFE_INF)
             z_for_zero = jnp.where(use_inf, SAFE_ZERO, z)
 

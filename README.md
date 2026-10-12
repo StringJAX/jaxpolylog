@@ -6,7 +6,7 @@
     <a href="https://jaxpolylog.readthedocs.io"><img src="https://readthedocs.org/projects/jaxpolylog/badge/?version=latest" alt="Docs"/></a>
     <a href="https://pypi.org/project/jaxpolylog/"><img src="https://img.shields.io/pypi/v/jaxpolylog.svg" alt="PyPI"/></a>
     <a href="https://www.python.org"><img src="https://img.shields.io/badge/python-3.12%2B-blue.svg" alt="Python"/></a>
-    <a href="https://github.com/AndreasSchachner/jaxpolylog/actions/workflows/ci.yml"><img src="https://github.com/AndreasSchachner/jaxpolylog/actions/workflows/ci.yml/badge.svg" alt="CI"/></a>
+    <a href="https://github.com/StringJAX/jaxpolylog/actions/workflows/ci.yml"><img src="https://github.com/StringJAX/jaxpolylog/actions/workflows/ci.yml/badge.svg" alt="CI"/></a>
     <a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="License: GPL v3"/></a>
 </p>
 
@@ -41,7 +41,7 @@ Polylogarithms appear in nearly every advanced calculation in theoretical physic
 
 5. **Closed forms for $s \le 1$** are hard-coded, so neutral orders ($s = 0, -1, -2, \dots, -9$) reduce to rational functions in $z$ and round-trip exactly through autodiff.
 
-The result: $\mathrm{Li}_s$ -- and all of its derivatives, up to whatever order JAX is willing to trace -- become a single JIT-traceable, vmap-traceable, autodiff-clean primitive that downstream packages (period computations, flux-vacuum scans, conifold expansions, instanton sums) can drop into their forward and backward passes without writing any special-case code. `jaxpolylog` is what makes [`jaxvacua`](https://github.com/AndreasSchachner/jaxvacua) and the broader [`stringforge`](https://github.com/AndreasSchachner/stringforge) ecosystem able to autodiff through the Kahler potential and the GVW superpotential all the way to fourth order in the deep LCS limit.
+The result: $\mathrm{Li}_s$ -- and all of its derivatives, up to whatever order JAX is willing to trace -- become a single JIT-traceable, vmap-traceable, autodiff-clean primitive that downstream packages (period computations, flux-vacuum scans, conifold expansions, instanton sums) can drop into their forward and backward passes without writing any special-case code. `jaxpolylog` is what makes [`jaxvacua`](https://github.com/StringJAX/jaxvacua) and the broader [`stringforge`](https://github.com/StringJAX/stringforge) ecosystem able to autodiff through the Kähler potential and the GVW superpotential all the way to fourth order in the deep LCS limit.
 
 
 ## Installation
@@ -61,7 +61,7 @@ Next, choose the installation method that best fits your use case:
   `pip install jaxpolylog`
 
 - **Editable install directly from GitHub:**
-  `pip install -e git+https://github.com/AndreasSchachner/jaxpolylog.git#egg=jaxpolylog`
+  `pip install -e git+https://github.com/StringJAX/jaxpolylog.git#egg=jaxpolylog`
 
 - **Editable install from a local clone (recommended for development):**
   After cloning the repository, run `pip install -e .` from the project root.
@@ -163,4 +163,4 @@ GPL-3.0-or-later. See [LICENSE](LICENSE).
 
 ## Contact
 
-For questions or feedback, please get in touch: <as3475@cornell.edu>, or open an issue at <https://github.com/AndreasSchachner/jaxpolylog/issues>.
+For questions or feedback, please get in touch: <as3475@cornell.edu>, or open an issue at <https://github.com/StringJAX/jaxpolylog/issues>.
