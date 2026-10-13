@@ -228,6 +228,45 @@ def _compute_pval_optimal() -> float:
 # import time by solving e^{-2πt} = t via bisection (~0.2322).
 _PVAL_OPTIMAL: float = _compute_pval_optimal()
 
+
+def _patch_use_inf(z, pval: float):
+    r"""
+    **Description:**
+    Branch choice of the ``"patch"`` method: ``True`` where the power series (``"inf"``) is used,
+    ``False`` where the expansion in :math:`\mu = \log z` (``"zero"``) is used.
+
+    The truncation errors after :math:`N` terms are roughly :math:`|z|^N` and :math:`t^N`,
+    :math:`t = |\mu|/(2\pi)` (crude estimates: prefactors are ignored). The power series is used
+    where
+
+    .. math::
+        |z| < 1 \,, \qquad t \ge p \,, \qquad
+        \left(z > 0 \ \text{real} \quad\text{or}\quad |z| \le \max\left(t,\, e^{-2\pi p}\right)\right) ,
+
+    with :math:`p` = ``pval``. On the positive real axis the rule is therefore exactly :math:`t \ge p`,
+    bit for bit as before 2026-10-12 (there :math:`|z| = e^{-2\pi t}`, so the third condition would
+    follow from the second in exact arithmetic, but not always after rounding). Off the axis the
+    second condition alone said nothing about :math:`|z|`: at :math:`z = -|z|`, :math:`t \ge 1/2` for
+    every :math:`|z|`, and the power series was used up to :math:`z \to -1`, where :math:`N` terms
+    leave an error of about :math:`1/(2N^s)`. For the default :math:`p` = :data:`_PVAL_OPTIMAL`
+    (:math:`e^{-2\pi p} = p`) the rule off the axis is :math:`|z| \le t`. Because the estimates are
+    crude this is not the better branch at every point: at ``p_range = 10`` and :math:`s = 3` it
+    is up to about 150 times worse than the power series near :math:`z = -0.52`, while the largest
+    error over the unit disk falls (from :math:`7.6\times10^{-4}` to :math:`1.5\times10^{-4}`;
+    for :math:`s = 2` from :math:`7.3\times10^{-3}` to :math:`8.5\times10^{-5}`; measured 2026-10-13).
+
+    Args:
+        z (complex): The argument(s).
+        pval (float): Transition parameter, see :func:`jax_polylog`.
+
+    Returns:
+        bool: ``True`` where the ``"inf"`` series is used.
+    """
+    r = jnp.abs(z)
+    t = jnp.abs(jnp.log(z)) / (2.0 * jnp.pi)
+    positive_axis = (jnp.imag(z) == 0) & (jnp.real(z) > 0)
+    return (r < 1.0) & (t >= pval) & (positive_axis | (r <= jnp.maximum(t, jnp.exp(-2.0 * jnp.pi * pval))))
+
 @partial(jit, static_argnums = (2,))
 def intgrand(z: complex, t: complex, s: int) -> complex:
     r"""
@@ -280,12 +319,17 @@ def jax_polylog(z: complex, s: int, p_range: int, approx: str, pval: float = _PV
         p_range (int): The number of terms to include in the series expansion for non-predefined `s` values. Higher values increase accuracy but also computation time.
         approx (str): The approximation method to use. Must be one of ``"inf"``, ``"integral"``, ``"zero"``, or ``"patch"``.
         pval (float, optional): Transition parameter for the ``"patch"`` method.
-            Points with ``t = |log z| / (2π) < pval`` use the ``"zero"`` expansion;
-            points with ``t ≥ pval`` *and* ``|z| < 1`` use the ``"inf"`` series.
-            Points with ``|z| ≥ 1`` always use ``"zero"`` (the ``"inf"`` series
-            diverges there).  The default is :data:`_PVAL_OPTIMAL` ≈ 0.2322,
-            the fixed point of ``e^{-2πt} = t`` that equates both truncation
-            errors.  Ignored for ``approx`` values other than ``"patch"``.
+            With ``t = |log z| / (2π)``, points with ``|z| < 1``, ``t ≥ pval`` and
+            (``z`` real positive, or ``|z| ≤ max(t, e^{-2π pval})``) use the
+            ``"inf"`` series (truncation error roughly ``|z|^N``); all others use
+            the ``"zero"`` expansion (roughly ``t^N``), in particular every point
+            with ``|z| ≥ 1``, where the ``"inf"`` series diverges.  On the positive
+            real axis the rule is exactly ``t ≥ pval``.  The default is
+            :data:`_PVAL_OPTIMAL` ≈ 0.2322, the fixed point of ``e^{-2πt} = t``,
+            with which the rule off the axis is ``|z| ≤ t``: the branch with the
+            smaller of the two crude estimates (not at every point the more
+            accurate one; see :func:`_patch_use_inf`).  Ignored for ``approx``
+            values other than ``"patch"``.
         
     Returns:
         complex: The computed polylogarithm values at the input `z`.
@@ -372,16 +416,17 @@ def jax_polylog(z: complex, s: int, p_range: int, approx: str, pval: float = _PV
             # overflows (the "zero" branch at small |z|, where μ^k → huge)
             # or diverges (the "inf" branch at |z| ≥ 1).
             #
-            #   |z| < 1  AND  t = |log z|/(2π) ≥ pval   →   "inf"  branch
-            #   otherwise                                 →   "zero" branch
+            #   |z| < 1, t = |log z|/(2π) ≥ pval, and z > 0 real or
+            #   |z| ≤ max(t, e^{-2π pval})                          →  "inf"
+            #   otherwise                                           →  "zero"
+            # (see :func:`_patch_use_inf`; before 2026-10-12 the third condition
+            # was missing, which chose "inf" up to z → -1)
             #
             # The safe substitutes (|z|=0.5 for the inf branch, |z|=0.9 for
             # the zero branch) sit comfortably inside each branch's
             # convergence basin, so the inactive branch produces a finite
             # (irrelevant) number that ``jnp.where`` then discards.
-            mu = jnp.log(z)
-            t  = jnp.abs(mu) / (2.0 * jnp.pi)
-            use_inf = (jnp.abs(z) < 1.0) & (t >= pval)
+            use_inf = _patch_use_inf(z, pval)
 
             SAFE_INF  = jnp.asarray(0.5, dtype=z.dtype)     # real literals: real or complex z (2026-10-09)
             SAFE_ZERO = jnp.asarray(0.9, dtype=z.dtype)
@@ -490,9 +535,7 @@ def _Li_over_z(z: complex, s: int, p_range: int, approx: str, pval: float) -> co
             # ``0 · NaN = NaN`` poisoning cannot reach the ``jnp.where``.
             # The zero branch divides by z, which is safe because the safe
             # substitute SAFE_ZERO = 0.9 keeps the divisor away from 0.
-            mu = jnp.log(z)
-            t  = jnp.abs(mu) / (2.0 * jnp.pi)
-            use_inf = (jnp.abs(z) < 1.0) & (t >= pval)
+            use_inf = _patch_use_inf(z, pval)
 
             SAFE_INF  = jnp.asarray(0.5, dtype=z.dtype)     # real literals: real or complex z (2026-10-09)
             SAFE_ZERO = jnp.asarray(0.9, dtype=z.dtype)

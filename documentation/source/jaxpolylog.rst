@@ -4,8 +4,9 @@
 API reference
 =============
 
-The full public surface of ``jaxpolylog`` lives in a single module,
-``jaxpolylog.polylogs``, and is re-exported through the top-level
+The public functions live in ``jaxpolylog.polylogs`` (argument
+:math:`z`) and ``jaxpolylog.exponent_argument`` (argument :math:`w` of
+:math:`z = e^{2\pi i w}`), and are re-exported through the top-level
 ``jaxpolylog`` package.
 
 
@@ -17,6 +18,7 @@ Top-level functions
 
    jax_polylog
    jax_polylog_vmap
+   li_exp
 
 
 Numerical and algorithmic helpers
@@ -38,6 +40,7 @@ having to read the source.
    polylogs._zeta_pos_int
    polylogs._Li1_over_z_stable
    polylogs._compute_pval_optimal
+   polylogs._patch_use_inf
    polylogs._Li_over_z
 
 
@@ -47,7 +50,8 @@ Optimal patch crossover
 .. autodata:: jaxpolylog.polylogs._PVAL_OPTIMAL
    :no-value:
 
-The unique positive solution of :math:`e^{-2\pi t} = t`, used as the
-default crossover between the ``"inf"`` and ``"zero"`` series in
-``approx="patch"``.  Approximately :math:`0.2322`.  Precomputed once
-at import time by bisection.
+The unique positive solution of :math:`e^{-2\pi t} = t`, the default
+``pval`` of ``approx="patch"``: on the positive real axis the crossover
+between the ``"inf"`` and ``"zero"`` series.  Approximately
+:math:`0.2322`.  Precomputed once at import time by bisection.  Off
+that axis the branch is chosen by :func:`polylogs._patch_use_inf`.
