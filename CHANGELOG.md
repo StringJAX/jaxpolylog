@@ -2,9 +2,12 @@
 
 Notable changes to jaxpolylog, newest first.
 
-## Unreleased
+## 0.4.0 — 2026-10-15
 
 ### Fixed
+- `jaxpolylog.__version__` matches the package version. The 0.3.0 upload on PyPI reports
+  `__version__ == '0.2.1'` while its metadata says 0.3.0: `setup.py` had been bumped and
+  `jaxpolylog/__init__.py` had not. `tests/test_version.py` now checks that the two agree.
 - Branch choice of `approx="patch"` off the positive real axis (2026-10-12). For s ≥ 2 the method
   uses the power series Σ z^k/k^s (truncation error ~ |z|^N) or the expansion in μ = log z (error
   ~ t^N, t = |μ|/(2π)). It took the power series whenever |z| < 1 and t ≥ `pval`; the default
@@ -82,5 +85,6 @@ Notable changes to jaxpolylog, newest first.
 - `tests/test_real_arguments.py` (5 tests): real arguments with `approx="patch"`, values against
   mpmath and against the complex path, first and second derivatives (2026-10-09; 4 fail before
   the fix).
+- `tests/test_version.py`: `setup.py` and `jaxpolylog.__version__` give the same version.
 - `TestClosedFormCases.test_li1_small_modulus` in `tests/test_polylog_accuracy.py`:
   $\mathrm{Li}_1$ against mpmath for `|z|` from 1e-3 to 1e-15, relative tolerance 1e-14.

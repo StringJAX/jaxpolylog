@@ -22,4 +22,4 @@ jaxpolylog: JAX-compatible polylogarithm functions with automatic differentiatio
 from .polylogs import *
 from .exponent_argument import li_exp
 
-__version__ = '0.3.0'
+__version__ = '0.4.0'
