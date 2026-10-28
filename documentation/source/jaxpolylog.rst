@@ -15,6 +15,7 @@ Top-level functions
 
 .. autosummary::
    :toctree: _autosummary
+   :template: autosummary/custom_jvp.rst
 
    jax_polylog
    jax_polylog_vmap

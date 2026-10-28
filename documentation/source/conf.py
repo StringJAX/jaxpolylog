@@ -62,7 +62,8 @@ source_suffix = {
 }
 exclude_patterns = []
 
-# autosummary generates stub pages with their own ``.. autofunction::``,
+# autosummary generates stub pages with their own ``.. autofunction::``
+# (for ``jax.custom_jvp`` objects through a template, see the end of this file),
 # so we lean on it alone -- ``jaxpolylog.rst`` does NOT call
 # ``.. autofunction::`` on the same names (which would emit
 # ``duplicate object description`` warnings).
@@ -76,15 +77,6 @@ napoleon_use_rtype = False
 napoleon_custom_sections = [("Returns", "params_style")]
 add_module_names = False
 toc_object_entries_show_parents = "hide"
-
-# Tolerate the cosmetic warnings that come from documenting a
-# ``custom_jvp``-decorated function and from docstrings that contain
-# ``|z|`` (docutils tries to read it as a substitution reference).
-# Neither blocks the rendered HTML.
-suppress_warnings = [
-    "autodoc",
-    "docutils",
-]
 
 
 # -- HTML output -------------------------------------------------------------
@@ -113,3 +105,26 @@ mathjax3_config = {
     "tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]]},
     "svg": {"fontCache": "global"},
 }
+
+
+# -- ``jax.custom_jvp`` objects ----------------------------------------------
+# autodoc classifies a ``jax.custom_jvp`` object (``jax_polylog``, ``li_exp``)
+# as data, not as a function.  Their stub pages therefore use the template
+# ``_templates/autosummary/custom_jvp.rst`` (``.. autofunction::``), and this
+# hook re-parses such a docstring as a function's wherever autodoc still treats
+# it as data (the autosummary tables): napoleon would otherwise read its first
+# line, ``**Description:**``, as an attribute's ``type: description``.
+import jax
+from sphinx.ext.napoleon.docstring import GoogleDocstring
+from sphinx.util.docstrings import prepare_docstring
+
+
+def _custom_jvp_as_function(app, what, name, obj, options, lines):
+    if what == "data" and isinstance(obj, jax.custom_jvp) and obj.__doc__:
+        lines[:] = GoogleDocstring(prepare_docstring(obj.__doc__), app.config, app,
+                                   "function", name, obj, options).lines()
+
+
+def setup(app):
+    # after napoleon's own handler (default priority 500)
+    app.connect("autodoc-process-docstring", _custom_jvp_as_function, priority=600)

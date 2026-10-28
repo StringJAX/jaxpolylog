@@ -2,6 +2,36 @@
 
 Notable changes to jaxpolylog, newest first.
 
+## [Unreleased] — 0.4.1 (prepared 2026-10-28; not yet tagged)
+
+Packaging, CI and documentation only; no change to any computed value.
+
+### Fixed
+- The API pages of `jax_polylog` and `li_exp`. autodoc classifies a `jax.custom_jvp` object as
+  data, not as a function, so both pages showed `jax_polylog = <jax._src.custom_derivatives.custom_jvp
+  object>` with no signature, and napoleon read the docstrings' first line, `**Description:**`, as
+  an attribute's `type: description` (a stray `**` and a `:type: **Description` field). The stub pages
+  now use `.. autofunction::` (template `_templates/autosummary/custom_jvp.rst`) and show the
+  signatures; a hook in `conf.py` parses these docstrings as a function's in the summary tables.
+- The `|z| < 1` in `jax_polylog`'s docstring is now maths; docutils had read `|z|` as an undefined
+  substitution.
+- `conf.py` no longer suppresses the `autodoc` and `docutils` warning classes; they had hidden the
+  defects above (four warnings and one error).
+- The quickstart notebook's cells carry ids (nbformat 4.5 requires them; a future nbformat makes
+  their absence an error).
+- `documentation/source/_static/` is tracked (`.gitkeep`). `html_static_path` names it, and an
+  empty directory does not survive a clone, so a clean checkout warned.
+
+### Changed
+- Licence classifier: "GNU General Public License v3 or later (GPLv3+)", matching the
+  `GPL-3.0-or-later` licence field and the source headers. Python 3.13 classifier added.
+- Read the Docs: `fail_on_warning: true`.
+
+### Added
+- CI (`.github/workflows/ci.yml`): the test suite on Python 3.12 and 3.13, and docs builds (html and
+  singlehtml, the builders Read the Docs runs with `-W`) with `-W`, on every push and pull request to `main`
+  and weekly.
+
 ## 0.4.0 — 2026-10-15
 
 ### Fixed

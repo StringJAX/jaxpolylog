@@ -1,0 +1,91 @@
+name: CI
+
+# Runs on every push/PR to main and weekly:
+#
+#  * test — the whole suite (about 2 minutes locally; the references come
+#    from mpmath, so it is installed alongside pytest).
+#  * docs — sphinx-build with -W for html and singlehtml (the builders Read
+#    the Docs runs with -W under `fail_on_warning: true`; its PDF build does
+#    not use -W); --keep-going reports all of them.
+#    Notebooks are not executed (`nb_execution_mode = "off"`).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 4 * * 0"   # Sunday 04:00 UTC (weekly)
+  workflow_dispatch:
+
+# Cancel superseded in-flight runs on the same ref.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests (py${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install jaxpolylog + test deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest mpmath
+          pip install -e .
+
+      - name: Run tests
+        run: pytest tests/ -q
+
+  docs:
+    name: Docs (sphinx-build -W)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install docs build deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r documentation/requirements.txt
+          pip install -e .
+
+      - name: Build HTML (warnings fail the job)
+        run: |
+          sphinx-build -b html -E -q -j 1 -W --keep-going \
+            -d /tmp/sphinx-doctree \
+            documentation/source /tmp/sphinx-out
+
+      - name: Build singlehtml (Read the Docs' htmlzip, also with -W)
+        run: |
+          sphinx-build -b singlehtml -E -q -j 1 -W --keep-going \
+            -d /tmp/sphinx-doctree-single \
+            documentation/source /tmp/sphinx-out-single
+
+      - name: The jax.custom_jvp functions are documented as functions
+        # Without the template `autosummary/custom_jvp.rst` their pages fall
+        # back to `py data` (no signature) and the build stays warning-free.
+        run: |
+          for f in jax_polylog li_exp; do
+            grep -q '<dl class="py function">' "/tmp/sphinx-out/_autosummary/jaxpolylog.$f.html" \
+              || { echo "jaxpolylog.$f is not documented as a function"; exit 1; }
+          done

@@ -298,7 +298,7 @@ def jax_polylog(z: complex, s: int, p_range: int, approx: str, pval: float = _PV
     .. math::
         \text{Li}_s(z) = \sum_{k=1}^{\infty} \frac{z^k}{k^s}
     
-    for |z| < 1 and can be analytically continued to other values of `z`.
+    for :math:`|z| < 1` and can be analytically continued to other values of `z`.
     For integer `s`, the function can be expressed in terms of elementary functions for specific values of `s`: 
     - For `s = 1`: `Li_1(z) = -ln(1 - z)`
     - For `s = 0`: `Li_0(z) = z / (1 - z)`

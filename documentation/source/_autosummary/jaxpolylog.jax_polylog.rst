@@ -3,4 +3,4 @@
 
 .. currentmodule:: jaxpolylog
 
-.. autodata:: jax_polylog
+.. autofunction:: jax_polylog
